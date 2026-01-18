@@ -1,0 +1,43 @@
+$C = "../Common.ui";
+Button {
+  LayoutMode: Left;
+  Anchor: (Left: 2, Right: 2,Bottom: 5, Height: 120, Width: 550/3);
+  Background: $C.@InputBoxBackground;
+  Padding: (Top: 4, Bottom: 4);
+  Style:  ButtonStyle(
+    Sounds: $C.@ButtonSounds,
+  );
+
+  Group {
+  FlexWeight: 1;
+  LayoutMode: Top;
+  Anchor: (Top: 2, Left: 2, Right: 2, Bottom: 2);
+  Padding: (Left: 4, Right: 4);
+
+  ItemIcon #IndexIcon {
+  Anchor: (Width: 64, Height: 64, Bottom: 5);
+  Visible: true;
+  }
+
+  Label #IndexTitle {
+  Style: (
+  Alignment: Center,
+  FontSize: 16,
+  RenderBold: true,
+  TextColor: #93844c
+  );
+  Anchor: (Top: 2);
+  Padding: (Top: 14);
+  }
+
+  Label #IndexDescription {
+  Style: (
+  FontSize: 16,
+  RenderBold: true,
+  TextColor: #93844c
+  );
+  Anchor: (Top: 2);
+  Padding: (Top: 14);
+  }
+  }
+}
