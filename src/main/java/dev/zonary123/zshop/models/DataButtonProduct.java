@@ -1,5 +1,6 @@
 package dev.zonary123.zshop.models;
 
+import dev.zonary123.zshop.ui.ProductAction;
 import dev.zonary123.zutils.models.EconomySelector;
 import lombok.*;
 
@@ -15,4 +16,5 @@ import lombok.*;
 public class DataButtonProduct {
   private Product product;
   private EconomySelector economy;
+  private ProductAction action;
 }
