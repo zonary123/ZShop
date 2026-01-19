@@ -254,7 +254,41 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Sea
   }
 
   private void sell(DataButtonProduct data, PlayerRef playerRef, Player player, int amount) {
-    // TODO: implementar venta
+    Product product = data.getProduct();
+    EconomySelector economy = data.getEconomy();
+    UUID playerUuid = playerRef.getUuid();
+
+    ItemStack stack = new ItemStack(product.getProduct(), amount);
+    ItemStackTransaction transaction = player.getInventory().getCombinedEverything().removeItemStack(stack);
+    int removedAmount;
+
+    if (transaction.getRemainder() == null || transaction.getRemainder().isEmpty()) removedAmount = amount;
+    else removedAmount = amount - transaction.getRemainder().getQuantity();
+
+    String reason = ZShop.get().getLang().getSellReason()
+      .replace("%amount%", String.valueOf(removedAmount))
+      .replace("%product%", stack.getItem().getId());
+
+    BigDecimal price = product.getSellPrice().multiply(BigDecimal.valueOf(removedAmount));
+    if (EconomyApi.deposit(playerUuid, economy, price, reason)) {
+      playerRef.sendMessage(
+        FormatMessage.formatMessage(
+          ZShop.get().getLang().getSellSuccess()
+            .replace("%amount%", String.valueOf(removedAmount))
+            .replace("%product%", stack.getItem().getId())
+            .replace("%total_price%", price.toString())
+        )
+      );
+    } else {
+      player.getInventory().getCombinedHotbarFirst().addItemStack(stack);
+      playerRef.sendMessage(
+        FormatMessage.formatMessage(
+          ZShop.get().getLang().getSellFailRollback()
+            .replace("%amount%", String.valueOf(removedAmount))
+            .replace("%product%", product.getProduct())
+        )
+      );
+    }
   }
 
   private static class SearchResult {

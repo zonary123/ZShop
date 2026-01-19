@@ -24,6 +24,8 @@ public class Lang {
   private String purchaseFailSpace = "&cYou do not have enough inventory space to purchase %amount%x %product%";
   private String sellReason = "Sale of %amount%x %product%";
   private String sellSuccess = "&aYou have sold %amount%x %product% for %total_price%";
+  private String sellFailProduct = "&cYou do not have %amount%x %product% to sell";
+  private String sellFailRollback = "&cThe sale of %amount%x %product% could not be completed due to a rollback";
 
   public void init() {
     Config config = ZShop.get().getConfig();
