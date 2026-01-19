@@ -5,7 +5,7 @@ $C.@PageOverlay {
 
     #Title {
       Group {
-        $C.@Title {
+        $C.@Title #TitleShops {
           Text: "Shops";
           Anchor: (Top: 4);
           Style: (RenderBold: true, RenderUppercase: true, HorizontalAlignment: Center, TextColor: #EE8349);

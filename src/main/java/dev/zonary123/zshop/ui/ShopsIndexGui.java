@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.zonary123.zshop.ZShop;
 import dev.zonary123.zshop.configs.Shops;
 import dev.zonary123.zshop.models.Shop;
 
@@ -54,6 +55,8 @@ public class ShopsIndexGui extends InteractiveCustomUIPage<ShopsIndexGui.Binding
         uiCommandBuilder.appendInline("#IndexCards", "Group { LayoutMode: Left; Anchor: (Bottom: 0); }");
       }
 
+      var lang = ZShop.get().getLang();
+      uiCommandBuilder.set("#TitleShops.Text", lang.getTitleShops());
       uiCommandBuilder.append("#IndexCards[" + rowIndex + "]", "Pages/ShopEntry.ui");
 
       uiCommandBuilder.set("#IndexCards[" + rowIndex + "][" + cardsInCurrentRow + "] #IndexIcon.ItemId",

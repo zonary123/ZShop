@@ -14,19 +14,17 @@ import java.nio.file.Path;
 @Data
 public class Lang {
   private String prefix = "&6[&eZShop&6]&r ";
-  private String reloadSuccess = "&aZShop configuration reloaded successfully.";
-  private String noPermission = "&cYou do not have permission to perform this action.";
-  private String shopNotFound = "&cShop not found.";
-  private String productNotFound = "&cProduct not found.";
-  private String insufficientFunds = "&cYou do not have enough funds to complete this purchase.";
-  private String insufficientItems = "&cYou do not have enough items to complete this sale.";
-  private String purchaseSuccess = "&aYou have successfully purchased %amount% x %product% for %price%.";
-  private String saleSuccess = "&aYou have successfully sold %amount% x %product% for %price%.";
-  private String shopCreated = "&aShop '%shop%' has been created successfully.";
-  private String shopDeleted = "&aShop '%shop%' has been deleted successfully.";
-  private String productAdded = "&aProduct '%product%' has been added to shop '%shop%'.";
-  private String productRemoved = "&aProduct '%product%' has been removed from shop '%shop%'.";
-  
+  private String titleShops = "ZShop - Shops";
+  private String titleProducts = "ZShop - Products in %shop%";
+  private String buyPrice = "Buy: %price% each";
+  private String sellPrice = "Sell: %price% each";
+  private String purchaseReason = "Purchase of %amount%x %product%";
+  private String purchaseSuccess = "&aYou have purchased %amount%x %product% for %total_price%";
+  private String purchaseFailFunds = "&cYou do not have enough funds to purchase %amount%x %product% for %total_price%";
+  private String purchaseFailSpace = "&cYou do not have enough inventory space to purchase %amount%x %product%";
+  private String sellReason = "Sale of %amount%x %product%";
+  private String sellSuccess = "&aYou have sold %amount%x %product% for %total_price%";
+
   public void init() {
     Config config = ZShop.get().getConfig();
     Path path = ZShop.getPath().resolve("lang").resolve(config.getLang() + ".json");

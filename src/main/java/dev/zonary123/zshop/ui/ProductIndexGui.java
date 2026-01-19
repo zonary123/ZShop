@@ -11,16 +11,19 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.inventory.transaction.ItemStackTransaction;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.zonary123.zshop.ZShop;
 import dev.zonary123.zshop.models.DataButtonProduct;
 import dev.zonary123.zshop.models.Product;
 import dev.zonary123.zshop.models.Shop;
 import dev.zonary123.zutils.api.EconomyApi;
 import dev.zonary123.zutils.models.EconomySelector;
+import dev.zonary123.zutils.utils.FormatMessage;
 import dev.zonary123.zutils.utils.UtilsFile;
 import lombok.Data;
 import lombok.Getter;
@@ -71,15 +74,22 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Bin
     @Nonnull UICommandBuilder uiCommandBuilder,
     @Nonnull UIEventBuilder uiEventBuilder, @Nonnull Store<EntityStore> store) {
     uiCommandBuilder.append("Pages/ProductsIndex.ui");
+
+    var lang = ZShop.get().getLang();
+    uiCommandBuilder.set("#TitleProducts.Text", lang.getTitleProducts()
+      .replace("%shop%", shop.getName()));
+
     this.buildProductList(uiCommandBuilder, uiEventBuilder);
   }
 
   private void buildProductList(
     @Nonnull UICommandBuilder uiCommandBuilder,
     @Nonnull UIEventBuilder uiEventBuilder) {
+    var lang = ZShop.get().getLang();
     int rowIndex = 0;
     int cardsInCurrentRow = 0;
     for (Product product : shop.getProducts()) {
+
       if (cardsInCurrentRow == 0) {
         uiCommandBuilder.appendInline("#IndexCards", "Group { LayoutMode: Left; Anchor: (Bottom: 0); }");
       }
@@ -91,10 +101,13 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Bin
       uiCommandBuilder.set(cardSelector + " #IndexIcon.ItemId",
         product.getProduct());
       uiCommandBuilder.set(cardSelector + " #IndexBuyPrice.Text",
-        "Buy: " + product.getBuyPrice().toString()
+        lang.getBuyPrice()
+          .replace("%price%", product.getBuyPrice().toString())
       );
       uiCommandBuilder.set(cardSelector + " #IndexSellPrice.Text",
-        "Sell: " + product.getSellPrice().toString());
+        lang.getSellPrice()
+          .replace("%price%", product.getSellPrice().toString())
+      );
 
 
       // Buy Button Binding
@@ -143,7 +156,13 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Bin
     @Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull BindingData data) {
     super.handleDataEvent(ref, store, data);
     DataButtonProduct buttonData = data.getData();
-    if (data.amount != null) this.amount = data.amount;
+    if (data.amount != null) {
+      this.amount = data.amount;
+      var commandBuilder = new UICommandBuilder();
+      var eventBuilder = new UIEventBuilder();
+      updateCard(ref, store, buttonData, commandBuilder, eventBuilder);
+      return;
+    }
 
     if (buttonData != null) {
       if (amount <= 0) amount = 1;
@@ -170,23 +189,54 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Bin
     }
   }
 
+  private void updateCard(Ref<EntityStore> ref, Store<EntityStore> store, DataButtonProduct buttonData, UICommandBuilder commandBuilder, UIEventBuilder eventBuilder) {
+
+  }
+
   private void buy(DataButtonProduct data, PlayerRef playerRef, Player player, int amount) {
     Product product = data.getProduct();
     EconomySelector economy = data.getEconomy();
     UUID playerUuid = playerRef.getUuid();
     BigDecimal price = product.getBuyPrice().multiply(BigDecimal.valueOf(amount));
     if (!EconomyApi.hasBalance(playerUuid, economy, price)) {
-      this.playerRef.sendMessage(Message.raw("You do not have enough balance to buy this product."));
+      playerRef.sendMessage(
+        FormatMessage.formatMessage(
+          ZShop.get().getLang().getPurchaseFailFunds()
+            .replace("%amount%", String.valueOf(amount))
+            .replace("%product%", product.getProduct())
+            .replace("%total_price%", price.toString())
+        )
+      );
       return;
     }
-    if (EconomyApi.withdraw(playerUuid, economy, price, "Shop purchase: " + product.getProduct())) {
-      this.playerRef.sendMessage(Message.raw("You have purchased the product for " + price.toString() + "."));
-      ItemStack itemStack = new ItemStack(product.getProduct(), amount);
-      if (!player.getInventory().getHotbar().addItemStack(itemStack).succeeded() && !player.getInventory().getStorage().addItemStack(itemStack).succeeded()) {
-        return;
-      }
-    } else {
-      this.playerRef.sendMessage(Message.raw("An error occurred while processing your purchase."));
+    ItemStack itemStack = new ItemStack(product.getProduct(), amount);
+    String itemId = itemStack.getItem().getId();
+    ItemStackTransaction transaction = player.getInventory().getCombinedHotbarFirst().addItemStack(
+      itemStack
+    );
+    ItemStack remainder = transaction.getRemainder();
+    if (remainder != null && !remainder.isEmpty()) {
+      playerRef.sendMessage(
+        FormatMessage.formatMessage(
+          ZShop.get().getLang().getPurchaseFailSpace()
+            .replace("%amount%", String.valueOf(amount))
+            .replace("%product%", itemId)
+        )
+      );
+      return;
+    }
+    String reason = ZShop.get().getLang().getPurchaseReason()
+      .replace("%amount%", String.valueOf(amount))
+      .replace("%product%", itemId);
+    if (EconomyApi.withdraw(playerUuid, economy, price, reason)) {
+      playerRef.sendMessage(
+        FormatMessage.formatMessage(
+          ZShop.get().getLang().getPurchaseSuccess()
+            .replace("%amount%", String.valueOf(amount))
+            .replace("%product%", itemId)
+            .replace("%total_price%", price.toString())
+        )
+      );
     }
   }
 

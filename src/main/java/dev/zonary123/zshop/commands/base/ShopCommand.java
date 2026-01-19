@@ -11,6 +11,8 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.zonary123.zshop.commands.admin.ReloadCommand;
+import dev.zonary123.zshop.commands.admin.ShopEditCommand;
+import dev.zonary123.zshop.commands.admin.ShopOtherCommand;
 import dev.zonary123.zshop.ui.ShopsIndexGui;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.jspecify.annotations.NonNull;
@@ -28,6 +30,12 @@ public class ShopCommand extends AbstractAsyncCommand {
     super(name, description);
     this.addSubCommand(
       new ReloadCommand("reload", "Reload ZShop configuration")
+    );
+    this.addSubCommand(
+      new ShopOtherCommand("other", "Open a shop for a player")
+    );
+    this.addSubCommand(
+      new ShopEditCommand("edit", "Edit a shop")
     );
   }
 

@@ -26,6 +26,7 @@ public class Shops {
             Shop shop = UtilsFile.read(file.toPath(), Shop.class);
             if (shop != null) {
               shop.setId(file.getName().replace(".json", ""));
+              shop.setFile(file);
               SHOPS.add(shop);
             }
           } catch (Exception e) {
