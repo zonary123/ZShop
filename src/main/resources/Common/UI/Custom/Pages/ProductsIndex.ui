@@ -1,37 +1,47 @@
 $C = "../Common.ui";
-$C.@PageOverlay {
+
+  $C.@PageOverlay {
+
   $C.@DecoratedContainer {
-    Anchor: (Width: 770, Height: 669);
+  Anchor: (Width: 1050, Height: 700);
 
-    #Title {
-      Group {
-        $C.@Title #TitleProducts {
-          Text: "Products";
-          Anchor: (Top: 4);
-          Style: (RenderBold: true, RenderUppercase: true, HorizontalAlignment: Center, TextColor: #EE8349);
-        }
-      }
-    }
-    #Content {
-      LayoutMode: Left;
+  #Title {
+  Group {
 
-      Group #Main {
-        LayoutMode: Top;
-
-        Group #IndexList {
-          Anchor: (Width: 760);
-          FlexWeight: 1;
-          LayoutMode: TopScrolling;
-          Padding: (Left: 4);
-          ScrollbarStyle: $C.@DefaultScrollbarStyle;
-
-          Group #IndexCards {
-            LayoutMode: Top;
-          }
-        }
-      }
-    }
+  $C.@Title #TitleProducts {
+  Text: "Products";
+  Anchor: (Top: 4);
+  Style: (
+  RenderBold: true,
+  RenderUppercase: true,
+  HorizontalAlignment: Center,
+  TextColor: #EE8349
+  );
   }
-}
 
+  // Si quieres buscador como en el template
+  // $C.@HeaderSearch {}
 
+  }
+  }
+
+  #Content {
+  LayoutMode: Left;
+
+  Group #Main {
+  FlexWeight: 1;
+  LayoutMode: TopScrolling;
+  Padding: (Left: 10);
+  ScrollbarStyle: $C.@DefaultScrollbarStyle;
+
+  Group #IndexCards {
+  LayoutMode: Top;
+  }
+
+  }
+  }
+  }
+
+  // Botón de volver (opcional)
+  $C.@BackButton {}
+  }
