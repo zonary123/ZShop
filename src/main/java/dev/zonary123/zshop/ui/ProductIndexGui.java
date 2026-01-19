@@ -40,6 +40,7 @@ import java.util.UUID;
 public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.BindingData> {
   private final Shop shop;
   private int amount;
+  private String searchQuery = "";
 
   public ProductIndexGui(@Nonnull PlayerRef playerRef, @Nonnull CustomPageLifetime lifetime, Shop shop) {
     super(playerRef, lifetime, BindingData.CODEC);
@@ -51,16 +52,18 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Bin
   public static class BindingData {
     static final String KEY_DATA = "Data";
     static final String KEY_INPUT_FIELD = "@InputField";
-
+    static final String KEY_SEARCH_QUERY = "@SearchQuery";
     public static final BuilderCodec<BindingData> CODEC = BuilderCodec.builder(BindingData.class, BindingData::new)
       .addField(new KeyedCodec<>(KEY_DATA, Codec.STRING), (searchGuiData, s) -> searchGuiData.data = s,
         searchGuiData -> searchGuiData.data)
       .addField(new KeyedCodec<>(KEY_INPUT_FIELD, Codec.INTEGER), (searchGuiData, i) -> searchGuiData.amount = i,
         searchGuiData -> searchGuiData.amount)
+      .addField(new KeyedCodec<>(KEY_SEARCH_QUERY, Codec.STRING), (searchGuiData, s) -> searchGuiData.searchQuery = s, searchGuiData -> searchGuiData.searchQuery)
       .build();
 
     private String data;
     private Integer amount;
+    private String searchQuery;
 
     public DataButtonProduct getData() {
       return UtilsFile.getGson().fromJson(this.data, DataButtonProduct.class);
@@ -74,6 +77,9 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Bin
     @Nonnull UICommandBuilder uiCommandBuilder,
     @Nonnull UIEventBuilder uiEventBuilder, @Nonnull Store<EntityStore> store) {
     uiCommandBuilder.append("Pages/ProductsIndex.ui");
+    uiCommandBuilder.set("#SearchInput.Value", this.searchQuery);
+    uiEventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged, "#SearchInput", EventData.of("@SearchQuery", "#SearchInput.Value"), false);
+
 
     var lang = ZShop.get().getLang();
     uiCommandBuilder.set("#TitleProducts.Text", lang.getTitleProducts()
@@ -85,10 +91,15 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Bin
   private void buildProductList(
     @Nonnull UICommandBuilder uiCommandBuilder,
     @Nonnull UIEventBuilder uiEventBuilder) {
+    uiCommandBuilder.clear("#IndexCards");
     var lang = ZShop.get().getLang();
     int rowIndex = 0;
     int cardsInCurrentRow = 0;
     for (Product product : shop.getProducts()) {
+      if (searchQuery != null && !searchQuery.isEmpty()) {
+        String lowerCaseQuery = searchQuery.toLowerCase();
+        if (!product.getProduct().toLowerCase().contains(lowerCaseQuery)) continue;
+      }
 
       if (cardsInCurrentRow == 0) {
         uiCommandBuilder.appendInline("#IndexCards", "Group { LayoutMode: Left; Anchor: (Bottom: 0); }");
@@ -144,7 +155,7 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Bin
 
 
       ++cardsInCurrentRow;
-      if (cardsInCurrentRow >= 4) {
+      if (cardsInCurrentRow >= 5) {
         cardsInCurrentRow = 0;
         ++rowIndex;
       }
@@ -157,10 +168,23 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Bin
     super.handleDataEvent(ref, store, data);
     DataButtonProduct buttonData = data.getData();
     if (data.amount != null) {
+      ZShop.getLog().atInfo().log(
+        "Setting amount to " + data.amount + " for player " + this.playerRef.getUsername()
+      );
       this.amount = data.amount;
       var commandBuilder = new UICommandBuilder();
       var eventBuilder = new UIEventBuilder();
-      updateCard(ref, store, buttonData, commandBuilder, eventBuilder);
+      this.sendUpdate(commandBuilder, eventBuilder, false);
+      return;
+    }
+    if (data.searchQuery != null) {
+      ZShop.getLog().atInfo().log(
+        "Setting search query to '" + data.searchQuery + "' for player " + this.playerRef.getUsername()
+      );
+      this.searchQuery = data.searchQuery;
+      var commandBuilder = new UICommandBuilder();
+      var eventBuilder = new UIEventBuilder();
+      updateCard(commandBuilder, eventBuilder);
       return;
     }
 
@@ -189,8 +213,12 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Bin
     }
   }
 
-  private void updateCard(Ref<EntityStore> ref, Store<EntityStore> store, DataButtonProduct buttonData, UICommandBuilder commandBuilder, UIEventBuilder eventBuilder) {
-
+  private void updateCard(UICommandBuilder commandBuilder, UIEventBuilder eventBuilder) {
+    this.sendUpdate(commandBuilder, eventBuilder, false);
+    this.buildProductList(
+      commandBuilder,
+      eventBuilder
+    );
   }
 
   private void buy(DataButtonProduct data, PlayerRef playerRef, Player player, int amount) {

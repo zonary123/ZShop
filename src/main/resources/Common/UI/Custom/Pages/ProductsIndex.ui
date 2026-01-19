@@ -19,8 +19,7 @@ $C = "../Common.ui";
   );
   }
 
-  // Si quieres buscador como en el template
-  // $C.@HeaderSearch {}
+  $C.@HeaderSearch {}
 
   }
   }
@@ -28,20 +27,21 @@ $C = "../Common.ui";
   #Content {
   LayoutMode: Left;
 
-  Group #Main {
+  Group #CommandInfo {
   FlexWeight: 1;
   LayoutMode: TopScrolling;
   Padding: (Left: 10);
   ScrollbarStyle: $C.@DefaultScrollbarStyle;
 
+
   Group #IndexCards {
   LayoutMode: Top;
   }
-
-  }
-  }
   }
 
-  // Botón de volver (opcional)
+  }
+  }
+  }
+
+
   $C.@BackButton {}
-  }
