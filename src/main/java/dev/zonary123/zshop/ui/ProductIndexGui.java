@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.util.*;
 
-public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.SearchGuiData> {
+public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.BindingData> {
   private final Shop shop;
   private String searchQuery = "";
   private int amount;
@@ -42,18 +42,18 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Sea
   private final Map<String, Product> visibleProductsMap = new LinkedHashMap<>();
 
   public ProductIndexGui(@Nonnull PlayerRef playerRef, @Nonnull CustomPageLifetime lifetime, Shop shop) {
-    super(playerRef, lifetime, SearchGuiData.CODEC);
+    super(playerRef, lifetime, BindingData.CODEC);
     this.shop = shop;
   }
 
   @Getter
   @Setter
-  public static class SearchGuiData {
+  public static class BindingData {
     static final String KEY_DATA = "Data";
     static final String KEY_INPUT_FIELD = "@InputField";
     static final String KEY_SEARCH_QUERY = "@SearchQuery";
 
-    public static final BuilderCodec<SearchGuiData> CODEC = BuilderCodec.builder(SearchGuiData.class, SearchGuiData::new)
+    public static final BuilderCodec<BindingData> CODEC = BuilderCodec.builder(BindingData.class, BindingData::new)
       .addField(new KeyedCodec<>(KEY_DATA, Codec.STRING), (d, s) -> d.data = s, d -> d.data)
       .addField(new KeyedCodec<>(KEY_INPUT_FIELD, Codec.INTEGER), (d, i) -> d.amount = i, d -> d.amount)
       .addField(new KeyedCodec<>(KEY_SEARCH_QUERY, Codec.STRING), (d, s) -> d.searchQuery = s, d -> d.searchQuery)
@@ -150,7 +150,7 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Sea
 
       eventBuilder.addEventBinding(CustomUIEventBindingType.Activating,
         cardSelector + " #BuyButton",
-        EventData.of(SearchGuiData.KEY_DATA, UtilsFile.getGson().toJson(DataButtonProduct.builder()
+        EventData.of(BindingData.KEY_DATA, UtilsFile.getGson().toJson(DataButtonProduct.builder()
           .product(product)
           .economy(shop.getEconomy())
           .action(ProductAction.BUY)
@@ -158,7 +158,7 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Sea
 
       eventBuilder.addEventBinding(CustomUIEventBindingType.Activating,
         cardSelector + " #SellButton",
-        EventData.of(SearchGuiData.KEY_DATA, UtilsFile.getGson().toJson(DataButtonProduct.builder()
+        EventData.of(BindingData.KEY_DATA, UtilsFile.getGson().toJson(DataButtonProduct.builder()
           .product(product)
           .economy(shop.getEconomy())
           .action(ProductAction.SELL)
@@ -166,7 +166,7 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Sea
 
       eventBuilder.addEventBinding(CustomUIEventBindingType.ValueChanged,
         cardSelector + " #AmountField",
-        EventData.of(SearchGuiData.KEY_INPUT_FIELD, "#AmountField.Value"), false);
+        EventData.of(BindingData.KEY_INPUT_FIELD, cardSelector + " #AmountField.Value"), false);
 
       cardsInRow++;
       if (cardsInRow >= 5) {
@@ -179,7 +179,7 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Sea
   @Override
   public void handleDataEvent(@Nonnull Ref<EntityStore> ref,
                               @Nonnull Store<EntityStore> store,
-                              @Nonnull SearchGuiData data) {
+                              @Nonnull BindingData data) {
 
     super.handleDataEvent(ref, store, data);
 
@@ -187,6 +187,9 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Sea
       this.amount = data.amount;
       var commandBuilder = new UICommandBuilder();
       var eventBuilder = new UIEventBuilder();
+      ZShop.getLog().atInfo().log(
+        "Amount set to " + this.amount + " for playerRef: " + this.playerRef.getUuid()
+      );
       sendUpdate(commandBuilder, eventBuilder, false);
     }
 
@@ -199,19 +202,39 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Sea
     }
 
     if (data.getData() != null) {
+      var commandBuilder = new UICommandBuilder();
+      var eventBuilder = new UIEventBuilder();
       DataButtonProduct buttonData = data.getData();
-      if (amount <= 0) amount = 1;
+      if (amount <= 0) {
+        PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+        if (playerRef != null) {
+          playerRef.sendMessage(
+            FormatMessage.formatMessage(
+              "Amount must be greater than zero to perform this action."
+            )
+          );
+        }
+        this.sendUpdate(commandBuilder, eventBuilder, false);
+        return;
+      }
+
 
       Player player = store.getComponent(ref, Player.getComponentType());
-      if (player == null) return;
+      if (player == null) {
+        ZShop.getLog().atInfo().log(
+          "Player component not found for playerRef: " + this.playerRef.getUuid()
+        );
+        return;
+      }
 
+      
       switch (buttonData.getAction()) {
         case BUY -> buy(buttonData, this.playerRef, player, amount);
         case SELL -> sell(buttonData, this.playerRef, player, amount);
       }
 
-      var commandBuilder = new UICommandBuilder();
-      var eventBuilder = new UIEventBuilder();
+
+      this.amount = 0;
       sendUpdate(commandBuilder, eventBuilder, false);
     }
   }
@@ -255,6 +278,10 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Sea
 
   private void sell(DataButtonProduct data, PlayerRef playerRef, Player player, int amount) {
     Product product = data.getProduct();
+    if (product.getSellPrice().compareTo(BigDecimal.ZERO) <= 0) {
+      playerRef.sendMessage(FormatMessage.formatMessage(ZShop.get().getLang().getSellNotHaveSellPrice()));
+      return;
+    }
     EconomySelector economy = data.getEconomy();
     UUID playerUuid = playerRef.getUuid();
 
@@ -264,6 +291,12 @@ public class ProductIndexGui extends InteractiveCustomUIPage<ProductIndexGui.Sea
 
     if (transaction.getRemainder() == null || transaction.getRemainder().isEmpty()) removedAmount = amount;
     else removedAmount = amount - transaction.getRemainder().getQuantity();
+    if (removedAmount <= 0) {
+      playerRef.sendMessage(FormatMessage.formatMessage(ZShop.get().getLang().getSellFailProduct()
+        .replace("%amount%", String.valueOf(amount))
+        .replace("%product%", stack.getItem().getId())));
+      return;
+    }
 
     String reason = ZShop.get().getLang().getSellReason()
       .replace("%amount%", String.valueOf(removedAmount))

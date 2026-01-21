@@ -39,9 +39,10 @@ Group {
     }
     Group {
       LayoutMode: Left;
-      Anchor: (Top: 12, Left: 0, Width: 120, Height: 40);
+      Anchor: (Height: 40, Bottom: 2);
+      Padding: (Top: 8);
       Button #BuyButton {
-        Anchor: (Top: 2, Left: 2, Right: 2, Bottom: 2,  Width: 82);
+        Anchor: (Width: 84);
         Background: (Color: #8ACF76);
         Label {
           Text: "Buy";
@@ -54,7 +55,7 @@ Group {
         }
       }
       Button #SellButton {
-        Anchor: (Top: 2, Left: 2, Right: 2, Bottom: 2,  Width: 82);
+        Anchor: (Width: 84);
         Background: (Color: #C75B42);
         Label {
           Text: "Sell";

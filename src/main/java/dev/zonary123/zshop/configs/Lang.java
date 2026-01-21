@@ -26,6 +26,7 @@ public class Lang {
   private String sellSuccess = "&aYou have sold %amount%x %product% for %total_price%";
   private String sellFailProduct = "&cYou do not have %amount%x %product% to sell";
   private String sellFailRollback = "&cThe sale of %amount%x %product% could not be completed due to a rollback";
+  private String sellNotHaveSellPrice = "&cThis product cannot be sold";
 
   public void init() {
     Config config = ZShop.get().getConfig();
